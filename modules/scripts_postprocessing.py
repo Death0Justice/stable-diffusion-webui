@@ -46,6 +46,8 @@ class ScriptPostprocessing:
         pass
 
 
+
+
 def wrap_call(func, filename, funcname, *args, default=None, **kwargs):
     try:
         res = func(*args, **kwargs)
@@ -64,9 +66,12 @@ class ScriptPostprocessingRunner:
     def initialize_scripts(self, scripts_data):
         self.scripts = []
 
-        for script_class, path, basedir, script_module in scripts_data:
-            script: ScriptPostprocessing = script_class()
-            script.filename = path
+        for script_data in scripts_data:
+            script: ScriptPostprocessing = script_data.script_class()
+            script.filename = script_data.path
+
+            if script.name == "Simple Upscale":
+                continue
 
             self.scripts.append(script)
 
@@ -87,12 +92,11 @@ class ScriptPostprocessingRunner:
             import modules.scripts
             self.initialize_scripts(modules.scripts.postprocessing_scripts_data)
 
-        scripts_order = [x.lower().strip() for x in shared.opts.postprocessing_scipts_order.split(",")]
+        scripts_order = shared.opts.postprocessing_operation_order
 
         def script_score(name):
-            name = name.lower()
             for i, possible_match in enumerate(scripts_order):
-                if possible_match in name:
+                if possible_match == name:
                     return i
 
             return len(self.scripts)
@@ -105,7 +109,7 @@ class ScriptPostprocessingRunner:
         inputs = []
 
         for script in self.scripts_in_preferred_order():
-            with gr.Box() as group:
+            with gr.Row() as group:
                 self.create_script_ui(script, inputs)
 
             script.group = group
@@ -120,7 +124,7 @@ class ScriptPostprocessingRunner:
             script_args = args[script.args_from:script.args_to]
 
             process_args = {}
-            for (name, component), value in zip(script.controls.items(), script_args):
+            for (name, _component), value in zip(script.controls.items(), script_args):
                 process_args[name] = value
 
             script.process(pp, **process_args)
@@ -145,3 +149,4 @@ class ScriptPostprocessingRunner:
     def image_changed(self):
         for script in self.scripts_in_preferred_order():
             script.image_changed()
+

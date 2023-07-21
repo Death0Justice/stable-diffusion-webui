@@ -36,3 +36,8 @@ notification.mp3
 /.launcher
 *.exe
 *.exe.bak
+/cache.json*
+/config_states/
+/node_modules
+/package-lock.json
+/.coverage*
